@@ -11,8 +11,10 @@ Baudrate operator""_bod(unsigned long long value) {
     case 19200: return Baudrate::B_19200;
     case 38400: return Baudrate::B_38400;
     case 57600: return Baudrate::B_57600;
+    case 74880: return Baudrate::B_74880;
     case 115200: return Baudrate::B_115200;
-    case 256000: return Baudrate::B_256000;
+    case 230400: return Baudrate::B_230400;
+    case 250000: return Baudrate::B_250000;
     default: return Baudrate::B_0;
   }
 }
