@@ -47,6 +47,7 @@ struct Params {
   Parity parity;
   Stopbits stopbits;
   Mode mode;
+  uint8_t rxPacketSize;
   std::function<void(std::span<uint8_t>)> receivedCallback;
   std::function<void()> transmitCompletedCallback;
 };

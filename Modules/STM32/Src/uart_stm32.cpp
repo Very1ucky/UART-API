@@ -4,19 +4,20 @@ using namespace Uart;
 
 static std::vector<UartHandle> handles;
 
-static Status registerUartSTMHandle(UART_HandleTypeDef* uart, const Params& params);
+static Status validateUartParams(const Params& params);
+static Status registerUartSTMHandle(UART_HandleTypeDef* uart,
+                                    const Params& params);
 static Status unregisterUartSTMHandle(UART_HandleTypeDef* uart);
-static Status addUartHandle(UartHandle handle);
+static Status addUartHandle(UartHandle& handle);
 static Status removeUartHandle(UART_HandleTypeDef* handle);
 static bool isRegistered(UART_HandleTypeDef* handle);
 
 Status init(Interface interface, const Params& params) {
-  if (params.baudrate == Baudrate::B_0) {
+  if (validateUartParams(params) != Status::OK) {
     return Status::ERROR;
   }
 
   UART_HandleTypeDef* uart = getUartSTMHandle(interface);
-
   if (uart == nullptr) {
     return Status::ERROR;
   }
@@ -39,7 +40,17 @@ Status init(Interface interface, const Params& params) {
     return Status::ERROR;
   }
 
-  return addUartHandle({uart, params.receivedCallback, params.transmitCompletedCallback});
+  UartHandle newHandle{.handle = uart,
+                       .rxPacketSize = params.rxPacketSize,
+                       .rxCallback = params.receivedCallback,
+                       .txCallback = params.transmitCompletedCallback};
+  if (addUartHandle(newHandle) != Status::OK) {
+    return Status::ERROR;
+  }
+
+  HAL_UART_Receive_IT(uart, &newHandle.buffer.at(0), newHandle.rxPacketSize);
+
+  return Status::OK;
 }
 
 Status deinit(Interface interface) {
@@ -76,12 +87,13 @@ Status changeParity(Interface interface, Parity parity) {
 
   HAL_UART_Abort_IT(uart);
 
-  uart->Init.Parity = parity == Parity::NONE
+  uart->Init.Parity =
+      parity == Parity::NONE
           ? UART_PARITY_NONE
           : (parity == Parity::ODD ? UART_PARITY_ODD : UART_PARITY_EVEN);
   if (HAL_UART_Init(uart) != HAL_OK) {
     return Status::ERROR;
-  }      
+  }
 
   return Status::OK;
 }
@@ -94,10 +106,11 @@ Status changeStopbits(Interface interface, Stopbits stopbits) {
 
   HAL_UART_Abort_IT(uart);
 
-  uart->Init.StopBits = stopbits == Stopbits::ONE ? UART_STOPBITS_1 : UART_STOPBITS_2;
+  uart->Init.StopBits =
+      stopbits == Stopbits::ONE ? UART_STOPBITS_1 : UART_STOPBITS_2;
   if (HAL_UART_Init(uart) != HAL_OK) {
     return Status::ERROR;
-  }      
+  }
 
   return Status::OK;
 }
@@ -144,11 +157,22 @@ UART_HandleTypeDef* getUartSTMHandle(Interface interface) {
   }
 }
 
-std::vector<UartHandle>& getUartHandles() { return handles;}
+std::vector<UartHandle>& getUartHandles() { return handles; }
 
-static Status registerUartSTMHandle(UART_HandleTypeDef* uart, const Params& params) {
-  
+static Status validateUartParams(const Params& params) {
+  if (params.baudrate == Baudrate::B_0) {
+    return Status::ERROR;
+  }
 
+  if (params.rxPacketSize > MAX_RX_PACKET_SIZE) {
+    return Status::ERROR;
+  }
+
+  return Status::OK;
+}
+
+static Status registerUartSTMHandle(UART_HandleTypeDef* uart,
+                                    const Params& params) {
   return Status::OK;
 }
 
@@ -161,7 +185,7 @@ static Status unregisterUartSTMHandle(UART_HandleTypeDef* uart) {
   return removeUartHandle(uart);
 }
 
-static Status addUartHandle(UartHandle newHandle) {
+static Status addUartHandle(UartHandle& newHandle) {
   auto ret = std::ranges::find(handles, newHandle.handle, &UartHandle::handle);
   if (ret == handles.end()) {
     handles.push_back(newHandle);
@@ -183,5 +207,6 @@ static Status removeUartHandle(UART_HandleTypeDef* handle) {
 }
 
 static bool isRegistered(UART_HandleTypeDef* handle) {
-  return std::ranges::find(handles, handle, &UartHandle::handle) != handles.end();
+  return std::ranges::find(handles, handle, &UartHandle::handle) !=
+         handles.end();
 }
