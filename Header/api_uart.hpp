@@ -5,9 +5,11 @@
 #include <functional>
 #include <span>
 
-#include "uart_config.h"
+#include "uart_config.hpp"
+
 
 namespace Uart {
+
 enum class Status : uint8_t { OK = 0, ERROR };
 
 enum class Interface : uint8_t {
@@ -45,13 +47,17 @@ struct Params {
   Parity parity;
   Stopbits stopbits;
   Mode mode;
+  std::function<void(std::span<uint8_t>)> receivedCallback;
+  std::function<void()> transmitCompletedCallback;
 };
 
 Status init(Interface interface, const Params &init);
-Status changeBaudrate(Baudrate baudrate);
-Status changeParity(Parity parity);
-Status changeStopbits(Stopbits stopbits);
-Status setRxCallback(std::function<void(uint8_t)> callback);
+Status deinit(Interface interface);
+Status changeBaudrate(Interface interface, Baudrate baudrate);
+Status changeParity(Interface interface, Parity parity);
+Status changeStopbits(Interface interface, Stopbits stopbits);
+Status changeReceivedCallback(Interface interface, std::function<void(std::span<uint8_t>)> callback);
+Status changeTransmitCompletedCallback(Interface interface, std::function<void()> callback);
 Status sendBytes(std::span<uint8_t> data);
 }  // namespace Uart
 
