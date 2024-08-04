@@ -257,7 +257,7 @@ static Status validateUartParams(const Params& params) {
     return Status::ERROR;
   }
 
-  if (params.rxPacketSize > MAX_RX_PACKET_SIZE) {
+  if (params.mode != Mode::TX_ONLY && params.rxPacketSize > MAX_RX_PACKET_SIZE) {
     return Status::ERROR;
   }
 
