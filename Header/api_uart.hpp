@@ -7,7 +7,6 @@
 
 #include "uart_config.hpp"
 
-
 namespace Uart {
 
 enum class Status : uint8_t { OK = 0, ERROR };
@@ -57,9 +56,14 @@ Status deinit(Interface interface);
 Status changeBaudrate(Interface interface, Baudrate baudrate);
 Status changeParity(Interface interface, Parity parity);
 Status changeStopbits(Interface interface, Stopbits stopbits);
-Status changeReceivedCallback(Interface interface, std::function<void(std::span<uint8_t>)> callback);
-Status changeTransmitCompletedCallback(Interface interface, std::function<void()> callback);
-Status sendBytes(std::span<uint8_t> data);
+Status changeReceivedCallback(Interface interface,
+                              std::function<void(std::span<uint8_t>)> callback);
+Status changeTransmitCompletedCallback(Interface interface,
+                                       std::function<void()> callback);
+
+Status startReceiving(Interface interface);
+Status stopReceiving(Interface interface);
+Status sendBytes(Interface interface, std::span<uint8_t> data);
 }  // namespace Uart
 
 Uart::Baudrate operator""_bod(unsigned long long value);
