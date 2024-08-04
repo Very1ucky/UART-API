@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_RX_PACKET_SIZE 256
+#define MAX_RX_PACKET_SIZE 128
 
 #define U1_ENABLED
 #define U2_ENABLED

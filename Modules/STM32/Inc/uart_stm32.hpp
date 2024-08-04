@@ -8,10 +8,10 @@
 struct UartHandle {
     UART_HandleTypeDef* handle;
     uint8_t rxPacketSize;
-    std::array<uint8_t, MAX_RX_PACKET_SIZE> buffer;
+    std::array<uint8_t, MAX_RX_PACKET_SIZE> buffer = {0};
     std::function<void(std::span<uint8_t>)> rxCallback;
     std::function<void()> txCallback;
 };
 
 UART_HandleTypeDef* getUartSTMHandle(Uart::Interface interface);
-std::vector<UartHandle>& getUartHandles();
+UartHandle& getUartHandle(UART_HandleTypeDef* handle);

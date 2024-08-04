@@ -5,20 +5,21 @@ using namespace Uart;
 static std::vector<UartHandle> handles;
 
 static Status validateUartParams(const Params& params);
-static Status registerUartSTMHandle(UART_HandleTypeDef* uart,
-                                    const Params& params);
-static Status unregisterUartSTMHandle(UART_HandleTypeDef* uart);
+static UartHandle& getUartHandle(Interface interface);
 static Status addUartHandle(UartHandle& handle);
 static Status removeUartHandle(UART_HandleTypeDef* handle);
 static bool isRegistered(UART_HandleTypeDef* handle);
 
-Status init(Interface interface, const Params& params) {
+static Status startReceiving(UART_HandleTypeDef* handle);
+static Status stopReceiving(UART_HandleTypeDef* handle, bool& wasStarted);
+
+Status Uart::init(Interface interface, const Params& params) {
   if (validateUartParams(params) != Status::OK) {
     return Status::ERROR;
   }
 
   UART_HandleTypeDef* uart = getUartSTMHandle(interface);
-  if (uart == nullptr) {
+  if (uart == nullptr || isRegistered(uart)) {
     return Status::ERROR;
   }
 
@@ -44,18 +45,16 @@ Status init(Interface interface, const Params& params) {
                        .rxPacketSize = params.rxPacketSize,
                        .rxCallback = params.receivedCallback,
                        .txCallback = params.transmitCompletedCallback};
-  if (addUartHandle(newHandle) != Status::OK) {
+  return addUartHandle(newHandle);
+}
+
+Status Uart::deinit(Interface interface) {
+  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
+  bool wasStarted = false;
+  if (stopReceiving(uart, wasStarted) != Status::OK) {
     return Status::ERROR;
   }
 
-  HAL_UART_Receive_IT(uart, &newHandle.buffer.at(0), newHandle.rxPacketSize);
-
-  return Status::OK;
-}
-
-Status deinit(Interface interface) {
-  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
-  HAL_UART_Abort_IT(uart);
   if (HAL_UART_DeInit(uart) != HAL_OK) {
     return Status::ERROR;
   };
@@ -63,29 +62,31 @@ Status deinit(Interface interface) {
   return removeUartHandle(uart);
 }
 
-Status changeBaudrate(Interface interface, Baudrate baudrate) {
+Status Uart::changeBaudrate(Interface interface, Baudrate baudrate) {
   UART_HandleTypeDef* uart = getUartSTMHandle(interface);
-  if (uart == nullptr || !isRegistered(uart)) {
+  bool wasStarted = false;
+  if (stopReceiving(uart, wasStarted) != Status::OK) {
     return Status::ERROR;
   }
-
-  HAL_UART_Abort_IT(uart);
 
   uart->Init.BaudRate = static_cast<uint32_t>(baudrate);
   if (HAL_UART_Init(uart) != HAL_OK) {
     return Status::ERROR;
   }
 
+  if (wasStarted) {
+    return startReceiving(uart);
+  }
+
   return Status::OK;
 }
 
-Status changeParity(Interface interface, Parity parity) {
+Status Uart::changeParity(Interface interface, Parity parity) {
   UART_HandleTypeDef* uart = getUartSTMHandle(interface);
-  if (uart == nullptr || !isRegistered(uart)) {
+  bool wasStarted = false;
+  if (stopReceiving(uart, wasStarted) != Status::OK) {
     return Status::ERROR;
   }
-
-  HAL_UART_Abort_IT(uart);
 
   uart->Init.Parity =
       parity == Parity::NONE
@@ -95,16 +96,19 @@ Status changeParity(Interface interface, Parity parity) {
     return Status::ERROR;
   }
 
+  if (wasStarted) {
+    return startReceiving(uart);
+  }
+
   return Status::OK;
 }
 
-Status changeStopbits(Interface interface, Stopbits stopbits) {
+Status Uart::changeStopbits(Interface interface, Stopbits stopbits) {
   UART_HandleTypeDef* uart = getUartSTMHandle(interface);
-  if (uart == nullptr || !isRegistered(uart)) {
+  bool wasStarted = false;
+  if (stopReceiving(uart, wasStarted) != Status::OK) {
     return Status::ERROR;
   }
-
-  HAL_UART_Abort_IT(uart);
 
   uart->Init.StopBits =
       stopbits == Stopbits::ONE ? UART_STOPBITS_1 : UART_STOPBITS_2;
@@ -112,6 +116,97 @@ Status changeStopbits(Interface interface, Stopbits stopbits) {
     return Status::ERROR;
   }
 
+  if (wasStarted) {
+    return startReceiving(uart);
+  }
+
+  return Status::OK;
+}
+
+Status Uart::changeReceivedCallback(
+    Interface interface, std::function<void(std::span<uint8_t>)> callback) {
+  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
+  bool wasStarted = false;
+  if (stopReceiving(uart, wasStarted) != Status::OK) {
+    return Status::ERROR;
+  }
+
+  auto& uartHandle = getUartHandle(interface);
+  uartHandle.rxCallback = callback;
+
+  if (wasStarted) {
+    return startReceiving(uart);
+  }
+
+  return Status::OK;
+}
+
+Status Uart::changeTransmitCompletedCallback(Interface interface,
+                                       std::function<void()> callback) {
+  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
+  bool wasStarted = false;
+  if (stopReceiving(uart, wasStarted) != Status::OK) {
+    return Status::ERROR;
+  }
+
+  auto& uartHandle = getUartHandle(interface);
+  uartHandle.txCallback = callback;
+
+  if (wasStarted) {
+    return startReceiving(uart);
+  }
+
+  return Status::OK;
+}
+
+Status Uart::startReceiving(Interface interface) {
+  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
+  return startReceiving(uart);
+}
+
+Status Uart::stopReceiving(Interface interface) {
+  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
+  bool wasStarted = false;
+  return stopReceiving(uart, wasStarted);
+}
+
+Status Uart::sendBytes(Interface interface, std::span<uint8_t> data) {
+  UART_HandleTypeDef* uart = getUartSTMHandle(interface);
+  if (HAL_UART_Transmit_IT(uart, data.data(), data.size()) != HAL_OK) {
+    return Status::ERROR;
+  }
+
+  return Status::OK;
+}
+
+static Status startReceiving(UART_HandleTypeDef* handle) {
+  if (handle == nullptr || !isRegistered(handle)) {
+    return Status::ERROR;
+  }
+
+  auto& uartHandle = getUartHandle(handle);
+
+  if (!isRegistered(uartHandle.handle)) {
+    return Status::ERROR;
+  }
+
+  if (HAL_UART_Receive_IT(uartHandle.handle, uartHandle.buffer.data(),
+                          uartHandle.rxPacketSize) != HAL_OK) {
+    return Status::ERROR;
+  }
+  return Status::OK;
+}
+
+static Status stopReceiving(UART_HandleTypeDef* handle, bool& wasStarted) {
+  if (handle == nullptr || !isRegistered(handle)) {
+    return Status::ERROR;
+  }
+
+  wasStarted = handle->RxState == HAL_UART_STATE_BUSY_RX;
+
+  if (HAL_UART_Abort_IT(handle) != HAL_OK) {
+    return Status::ERROR;
+  }
   return Status::OK;
 }
 
@@ -157,8 +252,6 @@ UART_HandleTypeDef* getUartSTMHandle(Interface interface) {
   }
 }
 
-std::vector<UartHandle>& getUartHandles() { return handles; }
-
 static Status validateUartParams(const Params& params) {
   if (params.baudrate == Baudrate::B_0) {
     return Status::ERROR;
@@ -169,20 +262,6 @@ static Status validateUartParams(const Params& params) {
   }
 
   return Status::OK;
-}
-
-static Status registerUartSTMHandle(UART_HandleTypeDef* uart,
-                                    const Params& params) {
-  return Status::OK;
-}
-
-static Status unregisterUartSTMHandle(UART_HandleTypeDef* uart) {
-  HAL_UART_Abort_IT(uart);
-  if (HAL_UART_DeInit(uart) != HAL_OK) {
-    return Status::ERROR;
-  };
-
-  return removeUartHandle(uart);
 }
 
 static Status addUartHandle(UartHandle& newHandle) {
@@ -209,4 +288,14 @@ static Status removeUartHandle(UART_HandleTypeDef* handle) {
 static bool isRegistered(UART_HandleTypeDef* handle) {
   return std::ranges::find(handles, handle, &UartHandle::handle) !=
          handles.end();
+}
+
+static UartHandle& getUartHandle(Interface interface) {
+  return getUartHandle(getUartSTMHandle(interface));
+}
+
+UartHandle& getUartHandle(UART_HandleTypeDef* handle) {
+  auto res = std::ranges::find(handles, handle, &UartHandle::handle);
+
+  return *res;
 }
