@@ -50,20 +50,107 @@ struct Params {
   std::function<void(std::span<uint8_t>)> receivedCallback;
   std::function<void()> transmitCompletedCallback;
 };
-
-Status init(Interface interface, const Params &init);
+/**
+ * @brief Initializes uart interface. Doesn't start receiving (use
+ * startReceiving function to do it)
+ *
+ * @param interface : used interface
+ * @param params : init paramaters
+ * @return Status : if parameters aren't valid, interface is already initialized
+ * or initialization failed, returns Status::ERROR, otherwise returns Status::OK
+ */
+Status init(Interface interface, const Params &params);
+/**
+ * @brief Deinitializes uart interface
+ *
+ * @param interface : used interface
+ * @return Status : if deinitialization failed or interface wasn't initialized,
+ * returns Status::ERROR, otherwise returns Status::OK
+ */
 Status deinit(Interface interface);
+/**
+ * @brief Changes interface baudrate. Resumes receiving with buffer wipe (if was
+ * started), doesn't resumes transmiting
+ *
+ * @param interface : used interface
+ * @param baudrate : new baudrate value
+ * @return Status : if change failed or interface wasn't initialized, returns
+ * Status::ERROR, otherwise returns Status::OK
+ */
 Status changeBaudrate(Interface interface, Baudrate baudrate);
+/**
+ * @brief Changes interface parity. Resumes receiving with buffer wipe (if was
+ * started), doesn't resumes transmiting
+ *
+ * @param interface : used interface
+ * @param parity : new parity value
+ * @return Status : if change failed or interface wasn't initialized, returns
+ * Status::ERROR, otherwise returns Status::OK
+ */
 Status changeParity(Interface interface, Parity parity);
+/**
+ * @brief Changes interface stopbits. Resumes receiving with buffer wipe (if was
+ * started), doesn't resumes transmiting
+ *
+ * @param interface : used interface
+ * @param stopbits : new stopbits value
+ * @return Status : if change failed or interface wasn't initialized, returns
+ * Status::ERROR, otherwise returns Status::OK
+ */
 Status changeStopbits(Interface interface, Stopbits stopbits);
+/**
+ * @brief Changes interface received callback. Resumes receiving with buffer
+ * wipe (if was started), doesn't resumes transmiting
+ *
+ * @param interface : used interface
+ * @param callback : new received callback
+ * @return Status : if change failed or interface wasn't initialized, returns
+ * Status::ERROR, otherwise returns Status::OK
+ */
 Status changeReceivedCallback(Interface interface,
                               std::function<void(std::span<uint8_t>)> callback);
+/**
+ * @brief Changes interface transmit callback. Resumes receiving with buffer
+ * wipe (if was started), doesn't resumes transmiting
+ *
+ * @param interface : used interface
+ * @param callback : new transmit callback
+ * @return Status : if change failed or interface wasn't initialized, returns
+ * Status::ERROR, otherwise returns Status::OK
+ */
 Status changeTransmitCompletedCallback(Interface interface,
                                        std::function<void()> callback);
-
+/**
+ * @brief Starts receiving data from uart interface
+ *
+ * @param interface : used interface
+ * @return Status : if receive already started, can't be started or interface
+ * wasn't initialized, returns Status::ERROR, otherwise returns Status::OK
+ */
 Status startReceiving(Interface interface);
+/**
+ * @brief Stops receiving data from uart interface
+ *
+ * @param interface : used interface
+ * @return Status : if interface wasn't initialized, returns Status::ERROR,
+ * otherwise returns Status::OK
+ */
 Status stopReceiving(Interface interface);
+/**
+ * @brief Sends bytes via uart interface
+ *
+ * @param interface : used interface
+ * @param data
+ * @return Status : if transmit already started, can't be started or interface
+ * wasn't initialized, returns Status::ERROR, otherwise returns Status::OK
+ */
 Status sendBytes(Interface interface, std::span<uint8_t> data);
 }  // namespace Uart
-
+/**
+ * @brief Literal to get Uart::Baudrate from unsigned long long
+ *
+ * @param value : baudrate num value
+ * @return Uart::Baudrate : B_0 if value can't be converted, otherwise returns
+ * other values from Uart::Baudrate enum
+ */
 Uart::Baudrate operator""_bod(unsigned long long value);

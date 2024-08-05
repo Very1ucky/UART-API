@@ -1,6 +1,6 @@
 # UART API 
 ## Description
-This project contains platform-independent api to work with uart interfaces written in C++.
+This project contains platform-independent api to work with uart interfaces written in C++. It allows to work with uart interfaces asynchronously using receive and transmit completed callbacks.
 
 ## Using
 You need at least C++20 standart to use this api.

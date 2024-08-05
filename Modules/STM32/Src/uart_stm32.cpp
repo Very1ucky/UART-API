@@ -186,10 +186,6 @@ static Status startReceiving(UART_HandleTypeDef* handle) {
 
   auto& uartHandle = getUartHandle(handle);
 
-  if (!isRegistered(uartHandle.handle)) {
-    return Status::ERROR;
-  }
-
   if (HAL_UART_Receive_IT(uartHandle.handle, uartHandle.buffer.data(),
                           uartHandle.rxPacketSize) != HAL_OK) {
     return Status::ERROR;
