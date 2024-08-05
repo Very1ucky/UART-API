@@ -1,3 +1,13 @@
+/**
+ * @file uart_stm32.hpp
+ * @author Daniil (sukhikhDaniilA@yandex.ru)
+ * @brief Header file for uart stm32 functions and structs
+ * @version 1
+ * @date 2024-08-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #pragma once
 
 #include <ranges>

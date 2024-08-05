@@ -1,3 +1,13 @@
+/**
+ * @file uart_callback.cpp
+ * @author Daniil (sukhikhDaniilA@yandex.ru)
+ * @brief STM32 HAL uart callback functions
+ * @version 1
+ * @date 2024-08-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "uart_callback.hpp"
 
 

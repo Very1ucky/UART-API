@@ -1,16 +1,62 @@
+/**
+ * @file uart_stm32.cpp
+ * @author Daniil (sukhikhDaniilA@yandex.ru)
+ * @brief Uart api stm32 realization
+ * @version 1
+ * @date 2024-08-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "uart_stm32.hpp"
 
 using namespace Uart;
 
 static std::vector<UartHandle> handles;
 
+/**
+ * @brief Validates uart interface parameters
+ * 
+ * @param params : uart parameters
+ * @return Status : if parameters are valid returns Status::OK, otherwise returns Status::ERROR
+ */
 static Status validateUartParams(const Params& params);
-static UartHandle& getUartHandle(Interface interface);
+/**
+ * @brief Adds uart handle to handles list
+ * 
+ * @param handle : handle to add
+ * @return Status : if handle with same handle.handle already exists returns Status::ERROR, otherwise returns Status::OK
+ */
 static Status addUartHandle(UartHandle& handle);
+/**
+ * @brief Removes uart handle from handles list
+ * 
+ * @param handle : handle to remove
+ * @return Status : if handle with same handle.handle doesn't exist returns Status::ERROR, otherwise returns Status::OK
+ */
 static Status removeUartHandle(UART_HandleTypeDef* handle);
+/**
+ * @brief Checks if uart handle is in handles list
+ * 
+ * @param handle : handle to check
+ * @return true : if handle is in handles list
+ * @return false : if handle is not in handles list
+ */
 static bool isRegistered(UART_HandleTypeDef* handle);
-
+/**
+ * @brief Starts uart receiving
+ * 
+ * @param handle : uart handle
+ * @return Status : if start failed returns Status::ERROR, otherwise returns Status::OK
+ */
 static Status startReceiving(UART_HandleTypeDef* handle);
+/**
+ * @brief Stops uart receiving
+ * 
+ * @param handle : uart handle
+ * @param wasStarted : is receiving was started before stopping
+ * @return Status : if stop failed returns Status::ERROR, otherwise returns Status::OK
+ */
 static Status stopReceiving(UART_HandleTypeDef* handle, bool& wasStarted);
 
 Status Uart::init(Interface interface, const Params& params) {

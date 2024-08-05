@@ -1,3 +1,13 @@
+/**
+ * @file api_uart.hpp
+ * @author Daniil (sukhikhDaniilA@yandex.ru)
+ * @brief Uart c++ api header
+ * @version 1
+ * @date 2024-08-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #pragma once
 
 #include <array>

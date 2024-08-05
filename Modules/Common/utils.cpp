@@ -1,3 +1,13 @@
+/**
+ * @file utils.cpp
+ * @author Daniil (sukhikhDaniilA@yandex.ru)
+ * @brief Utils platform-independent api functions
+ * @version 1
+ * @date 2024-08-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "api_uart.hpp"
 
 using namespace Uart;

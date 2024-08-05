@@ -1,16 +1,17 @@
 # UART API 
 ## Description
-This project contains platform-independent api to work with uart interfaces written in C++. It allows to work with uart interfaces asynchronously using receive and transmit completed callbacks.
+This project contains platform-independent api to work with uart interfaces written in C++. It allows to work with uart interfaces asynchronously using receive and transmit callbacks. It includes initialization function with set of baudrate, parity, stopbits, mode, rx and tx callbacks and rx bytes read count to callback execution; deinitialization function; functions to set interface parameters and callbacks; functions to start/stop data receiving; function to send byte array.
 
 ## Using
 You need at least C++20 standart to use this api.
 
-You can use one of the api implementation from `Modules` folder or write your own following api methods contracts. All modules can use `Modules/Common` source files which help to work with api.
+You can use one of the api implementation from `Modules` folder or write your own module following api methods contracts. All modules can use `Modules/Common` source files which help to work with api.
 
 Implemented modules can be easily added as CMake libraries (see `Modules/CMakeLists.txt`).
 
 ## Testing
-To test your api realization you can use tests from `Tests` folder. Running environment:
+To test your api realization you can use tests from `Tests` folder. 
+Running environment:
 - `python`
 - `pyserail`
 - `pytest`
