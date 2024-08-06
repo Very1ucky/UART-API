@@ -23,5 +23,17 @@ struct UartHandle {
     std::function<void()> txCallback;
 };
 
+/**
+ * @brief Gets the uart stm handle from Uart::Interface
+ * 
+ * @param interface : used interface
+ * @return UART_HandleTypeDef* : pointer to stm hal uart handle, nullptr if not found
+ */
 UART_HandleTypeDef* getUartSTMHandle(Uart::Interface interface);
+/**
+ * @brief Gets the Uart Handle object from stm hal uart handle
+ * 
+ * @param handle : stm hal uart handle
+ * @return UartHandle& : reference to UartHandle, ub if not found
+ */
 UartHandle& getUartHandle(UART_HandleTypeDef* handle);
